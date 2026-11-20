@@ -1,4 +1,5 @@
 import * as ci from "./chess_initializer.js"
+import { BotManager } from "./chess_bot_manager.js";
 const DRAG_THRESHOLD = 5;
 // View/controller only. Game state lives in this.game (plain data, no DOM);
 // this.cells[i] is the div that displays this.game.board[i].
@@ -10,6 +11,7 @@ class ChessBoard extends HTMLElement {
         super();
         this.cells = [];
         this.game = null;
+        this.botManager = null;
         window.GAME = this;
         // Absolutely positioned overlay; appended after the cells in initialize_board.
         this.drag_mask = ci.createCell(false, "drag_mask");
@@ -307,6 +309,13 @@ class ChessBoard extends HTMLElement {
     initialize_board() {
         this.game = ci.initialize_board(this.getAttribute("extended"));
         this.style.setProperty("--cols", this.game.size);
+        
+        // Initialize bot manager if not already done
+        if (!this.botManager) {
+            this.botManager = new BotManager(this.game, this);
+        } else {
+            this.botManager.game = this.game;
+        }
         
         // One div per square, built once; index in this.cells === index in game.board.
         this.cells = [];

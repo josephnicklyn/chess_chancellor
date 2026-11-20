@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Chess with Bots</title>
 
     <link rel="stylesheet" href="/static/css/styles.css">
     <script type="module" src="/static/js/chess_board.js"></script>
@@ -11,15 +11,48 @@
 <body>
     <h1 id="title">Chess Board</h1>
 
-    <div id="footer">
-        <button onclick="newGame('standard')">Standard</button>
-        <button onclick="newGame('chancellor')">Chancellor</button>
-        <button onclick="newGame('elephant')">Elephant</button>
+    <div id="controls">
+        <div>
+            <label>Game Variant:</label>
+            <button onclick="newGame('standard')">Standard</button>
+            <button onclick="newGame('chancellor')">Chancellor</button>
+            <button onclick="newGame('elephant')">Elephant</button>
+        </div>
+        
+        <div>
+            <label>White Player:</label>
+            <select id="whitePlayer" onchange="updatePlayers()">
+                <option value="human">Human</option>
+                <option value="random">Bot (Random)</option>
+                <option value="greedy">Bot (Greedy)</option>
+                <option value="defensive">Bot (Defensive)</option>
+            </select>
+            
+            <label>Black Player:</label>
+            <select id="blackPlayer" onchange="updatePlayers()">
+                <option value="human">Human</option>
+                <option value="random" selected>Bot (Random)</option>
+                <option value="greedy">Bot (Greedy)</option>
+                <option value="defensive">Bot (Defensive)</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Bot Speed:</label>
+            <input type="range" id="botSpeed" min="100" max="3000" value="1000" step="100" onchange="updateBotSpeed()">
+            <span id="speedLabel">1.0s</span>
+        </div>
+
+        <div>
+            <button id="autoPlayBtn" onclick="toggleAutoPlay()">Auto Play (Both Bots)</button>
+            <button onclick="nextBotMove()">Next Bot Move</button>
+            <button onclick="resetGame()">Reset</button>
+        </div>
     </div>
 
-
-    <chess-board id="chess_board" extended="chancellor">
+    <chess-board id="chess_board" extended="standard">
     </chess-board>
+
     <div id="report_card" class="report_card">
             <div class="header">Index</div>
             <div class="header">White</div>
@@ -28,13 +61,15 @@
     </div>
 
     
-    <script>
-        function newGame(type) {
-            let confirm = window.confirm("Start a new " + type + " game?");
-            if (!confirm) return;
-            const chessBoard = document.getElementById("chess_board");
-            chessBoard.setAttribute("extended", type.toLowerCase());
-        }
+    <script type="module">
+        import { ChessPlayer } from "/static/js/chess_player.js";
+        import { BotManager } from "/static/js/chess_bot_manager.js";
+
+        window.chessBoard = document.getElementById("chess_board");
+        let currentPlayers = {
+            0: null, // white human
+            1: new ChessPlayer("random") // black bot
+        };
 
         function toast(message, duration = 2000) {
             const toastEl = document.createElement("div");
@@ -55,6 +90,79 @@
                 document.body.removeChild(toastEl);
             }, duration);
         }
+
+        window.newGame = function(type) {
+            let confirm = window.confirm("Start a new " + type + " game?");
+            if (!confirm) return;
+            window.chessBoard.setAttribute("extended", type.toLowerCase());
+            window.chessBoard.botManager.newGame(type.toLowerCase());
+            resetGame();
+        };
+
+        window.updatePlayers = function() {
+            const whiteSel = document.getElementById("whitePlayer").value;
+            const blackSel = document.getElementById("blackPlayer").value;
+
+            currentPlayers[0] = whiteSel === "human" ? null : new ChessPlayer(whiteSel);
+            currentPlayers[1] = blackSel === "human" ? null : new ChessPlayer(blackSel);
+
+            if (window.chessBoard.botManager) {
+                window.chessBoard.botManager.setPlayer(0, currentPlayers[0]);
+                window.chessBoard.botManager.setPlayer(1, currentPlayers[1]);
+            }
+
+            toast(`White: ${whiteSel === "human" ? "Human" : "Bot (" + whiteSel + ")"}, Black: ${blackSel === "human" ? "Human" : "Bot (" + blackSel + ")"}`);
+        };
+
+        window.updateBotSpeed = function() {
+            const speed = parseInt(document.getElementById("botSpeed").value);
+            document.getElementById("speedLabel").textContent = (speed / 1000).toFixed(1) + "s";
+            if (window.chessBoard.botManager) {
+                window.chessBoard.botManager.setMoveDelay(speed);
+            }
+        };
+
+        window.toggleAutoPlay = function() {
+            if (!window.chessBoard.botManager) return;
+            
+            if (window.chessBoard.botManager.isRunning) {
+                window.chessBoard.botManager.stop();
+                document.getElementById("autoPlayBtn").textContent = "Auto Play (Both Bots)";
+            } else {
+                document.getElementById("autoPlayBtn").textContent = "Stop Auto Play";
+                window.chessBoard.botManager.playAutomated();
+            }
+        };
+
+        window.nextBotMove = async function() {
+            if (!window.chessBoard.botManager) return;
+            const color = window.chessBoard.game.whose_turn;
+            const player = currentPlayers[color];
+            if (player) {
+                await window.chessBoard.botManager.nextMove();
+                window.chessBoard.render();
+            } else {
+                toast("It's a human's turn!");
+            }
+        };
+
+        window.resetGame = function() {
+            updatePlayers();
+        };
+
+        // Initialize with default settings
+        setTimeout(() => {
+            if (window.chessBoard.botManager) {
+                window.chessBoard.botManager.setPlayer(0, currentPlayers[0]);
+                window.chessBoard.botManager.setPlayer(1, currentPlayers[1]);
+                window.chessBoard.botManager.setMoveDelay(1000);
+                window.chessBoard.botManager.setOnMoveCallback((color, game) => {
+                    if (currentPlayers[1 - color]) {
+                        setTimeout(() => window.chessBoard.botManager.nextMove(), 1000);
+                    }
+                });
+            }
+        }, 100);
     </script>
 </body>
 </html>

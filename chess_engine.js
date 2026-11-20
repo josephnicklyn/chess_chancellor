@@ -9,6 +9,9 @@ const PLAYERS = ['White', 'Black'];
 const KINGS_STATUS = ["CHECK", "CHECKMATE"];
 const PROMOTION_PIECES = new Set(["q", "r", "b", "n"]);
 
+// Toast helper: browser only, no-op in Node
+const toast = typeof window !== 'undefined' ? window.toast || (() => {}) : () => {};
+
 const PIECE_NAMES = ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn', 'chancellor', 'elephant'];
 
 const PIECE_DEFS = {
