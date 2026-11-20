@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script type="module" src="/static/js/chess_board.js"></script>
+</head>
+<body>
+    <h1 id="title">Chess Board</h1>
+
+    <div id="footer">
+        <button onclick="newGame('standard')">Standard</button>
+        <button onclick="newGame('chancellor')">Chancellor</button>
+        <button onclick="newGame('elephant')">Elephant</button>
+    </div>
+
+
+    <chess-board id="chess_board" extended="chancellor">
+    </chess-board>
+    <div id="report_card" class="report_card">
+            <div class="header">Index</div>
+            <div class="header">White</div>
+            <div class="header">Black</div>
+        
+    </div>
+
+    
+    <script>
+        function newGame(type) {
+            let confirm = window.confirm("Start a new " + type + " game?");
+            if (!confirm) return;
+            const chessBoard = document.getElementById("chess_board");
+            chessBoard.setAttribute("extended", type.toLowerCase());
+        }
+
+        function toast(message, duration = 2000) {
+            const toastEl = document.createElement("div");
+            toastEl.textContent = message;
+            toastEl.style.position = "absolute";
+            toastEl.style.fontSize = "32px"
+            toastEl.style.top = "1em";
+            toastEl.style.left = "40%";
+            toastEl.style.transform = "translateX(-50%)";
+            toastEl.style.backgroundColor = "#000A";
+            toastEl.style.color = "#fff";
+            toastEl.style.padding = "10px 20px";
+            toastEl.style.borderRadius = "5px";
+            toastEl.style.zIndex = "1001";
+            toastEl.style.textAlign = "center";
+            document.body.appendChild(toastEl);
+            setTimeout(() => {
+                document.body.removeChild(toastEl);
+            }, duration);
+        }
+    </script>
+</body>
+</html>
